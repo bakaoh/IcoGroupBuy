@@ -4,7 +4,7 @@ App = {
   MAX_EACH: 2, // ether
   START_TIME: 1520062494081,
   END_TIME: 1525246494081,
-  ethPrice: 'https://api.coinmarketcap.com/v1/ticker/ethereum/',
+  ethPriceUrl: 'https://api.coinmarketcap.com/v1/ticker/ethereum/',
   web3Provider: null,
   contracts: {},
 
@@ -15,7 +15,8 @@ App = {
     $('#info-deadline-p').text(Math.ceil((App.END_TIME - new Date().getTime()) / (1000 * 3600 * 24)) + " days left");
     $(document).on('click', '#qr-btn', App.handleQr);
     App.updatePrice();
-    
+    Timeline.load();
+
     return App.initWeb3();
   },
 
@@ -121,7 +122,7 @@ App = {
     });
   },
 
-  handleQr: function(event) {
+  handleQr: function (event) {
     $('#modal-qr').modal();
     if (!$('#qrcode').html()) $('#qrcode').qrcode(location.href);
   },
@@ -168,13 +169,64 @@ App = {
 
   updatePrice: function () {
     $.ajax({
-      url: App.ethPrice,
+      url: App.ethPriceUrl,
       success: function (json) {
         $('#info-eth-price').text("1 Eth = " + Math.ceil(json[0].price_usd) + " Usd");
       }
     });
   }
+};
 
+Timeline = {
+  url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRYnPhpxdyMzquQI2nPmrzMPGvtf3IUzOj7cERZW-XB-M3QPBvx6kHoUU26mYmRddqjQQ_A4zU3GltK/pub?gid=0&single=true&output=tsv',
+
+  load: function () {
+    $.ajax({
+      url: Timeline.url,
+      cache: false,
+      success: function (json) {
+        var html = "";
+        var lines = json.toString().split("\n");
+        for (var i in lines) {
+          var parts = lines[i].split("\t");
+          if (parts[1] && parts[1].trim()) {
+            html = html + Timeline.addItem(parts[0], parts[1], parts[2], parts[3], parts[4]);
+          } else {
+            html = html + Timeline.addLabel(parts[0]);
+          }
+        }
+
+        if (html) $('#timeline-content').html(html);
+      }
+    });
+  },
+
+  addItem: function (time, user, title, content, link) {
+    var body = !content || !content.trim() ? ""
+      : '<div class="timeline-body">'
+      + '<p>' + content + '</p>'
+      + '</div>';
+    var footer = !link || !link.trim() ? ""
+      : '<div class="timeline-footer">'
+      + '<a class="btn btn-primary btn-xs" href="' + link + '" target="_blank">Read more</a>'
+      + '</div>';
+    return '<li>'
+      + '<i class="fa fa-envelope bg-blue"></i>'
+      + '<div class="timeline-item">'
+      + '<span class="time">'
+      + '<i class="fa fa-clock-o"></i> ' + time + '</span>'
+      + '<h3 class="timeline-header">'
+      + '<a>' + user + '</a> ' + title + '</h3>'
+      + body + footer
+      + '</div>'
+      + '</li>';
+  },
+
+  addLabel: function (label) {
+    return '<li class="time-label">'
+      + '<span class="bg-green">' + label + '</span>'
+      + '</li>';
+  }
 };
 
 $(document).ready(function () {
