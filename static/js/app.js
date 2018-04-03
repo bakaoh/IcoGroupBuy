@@ -13,6 +13,7 @@ App = {
     $('#info-deadline').text(endDate.getDate() + "/" + (endDate.getMonth() + 1) + "/" + endDate.getFullYear());
     $('#bar-deadline').css("width", (new Date().getTime() - App.START_TIME) * 100 / (App.END_TIME - App.START_TIME) + "%");
     $('#info-deadline-p').text(Math.ceil((App.END_TIME - new Date().getTime()) / (1000 * 3600 * 24)) + " days left");
+    $(document).on('click', '#qr-btn', App.handleQr);
     App.updatePrice();
     
     return App.initWeb3();
@@ -120,6 +121,11 @@ App = {
     });
   },
 
+  handleQr: function(event) {
+    $('#modal-qr').modal();
+    if (!$('#qrcode').html()) $('#qrcode').qrcode(location.href);
+  },
+
   getInfos: function () {
     console.log('Getting info...');
 
@@ -140,6 +146,10 @@ App = {
         $('#info-total-eth').text(totalEth + "/" + App.MAX_TOTAL + " Eth");
         $('#bar-total-eth').css("width", totalEthP + "%");
         $('#info-total-eth-p').text(totalEthP + "%");
+        var totalToken = result[4].toNumber();
+        if (totalToken > 0) {
+          $('#info-price').text(App.roundUp(totalToken / totalEth) + " 3kc");
+        }
 
         if (result[0].c[0] == 1) {
           $('#send-group').show();
