@@ -29,6 +29,7 @@ App = {
         console.log(netId);
         switch (netId) {
           case "1":
+            App.address = "0x95e5B2b5Ab49766267c645f61755F9285AAeEB66";
             $('#info-network').text("mainnet");
             break
           case "2":
@@ -36,10 +37,10 @@ App = {
             console.log('This is the deprecated Morden test network.')
             break
           case "3":
+            App.address = "0x6a125df132180Dc4Da4E2dB05AeCb25a007c01F9";
             $('#info-network').text("ropsten");
             break
           default:
-            App.address = "0x7105a11e8487bfaf8c02aa6a7cda5283f971107c";
             $('#info-network').text("private");
         }
 
