@@ -5,6 +5,7 @@ App = {
   START_TIME: 1520062494081,
   END_TIME: 1525246494081,
   ethPriceUrl: 'https://api.coinmarketcap.com/v1/ticker/ethereum/',
+  infuraUrl: 'https://mainnet.infura.io/TLNJutB9tVbAFdEr3IyY',
   web3Provider: null,
   contracts: {},
 
@@ -21,6 +22,9 @@ App = {
   },
 
   initWeb3: function () {
+    if (typeof web3 === 'undefined') {
+      web3 = new Web3(new Web3.providers.HttpProvider(App.infuraUrl));
+    }
     if (typeof web3 !== 'undefined') {
       App.web3Provider = web3.currentProvider;
       web3 = new Web3(web3.currentProvider);
@@ -85,11 +89,12 @@ App = {
       return;
     }
     web3.eth.getAccounts(function (error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
       var account = accounts[0];
+      if (!account) {
+        $('#modal-warning-body').html('<p>Please add account to send contribution</p>');
+        $('#modal-warning').modal();
+        return;
+      }
       App.contracts.GroupBuy.contribute({ from: account, gas: 110000, value: amount * 10 ** 18 }, function (error, result) {
         if (!error) {
           $('#modal-success').modal();
@@ -106,11 +111,12 @@ App = {
     event.preventDefault();
 
     web3.eth.getAccounts(function (error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
       var account = accounts[0];
+      if (!account) {
+        $('#modal-warning-body').html('<p>Please add account to claim token</p>');
+        $('#modal-warning').modal();
+        return;
+      }
       App.contracts.GroupBuy.claim({ from: account, gas: 110000 }, function (error, result) {
         if (!error) {
           $('#modal-success').modal();
@@ -131,36 +137,29 @@ App = {
   getInfos: function () {
     console.log('Getting info...');
 
-    web3.eth.getAccounts(function (error, accounts) {
-      if (error) {
-        console.log(error);
+    App.contracts.GroupBuy.info(function (error, result) {
+      console.log(error);
+
+      $('#user-eth').text(App.roundUp(result[1].toNumber() / 10 ** 18) + " (max " + App.MAX_EACH + " eth)");
+      $('#user-token').text(result[2].c[0]);
+
+      var totalEth = App.roundUp(result[3].toNumber() / 10 ** 18);
+      var totalEthP = App.roundUp(totalEth * 100 / App.MAX_TOTAL);
+      $('#info-total-eth').text(totalEth + "/" + App.MAX_TOTAL + " Eth");
+      $('#bar-total-eth').css("width", totalEthP + "%");
+      $('#info-total-eth-p').text(totalEthP + "%");
+      var totalToken = result[4].toNumber();
+      if (totalToken > 0) {
+        $('#info-price').text(App.roundUp(totalToken / totalEth) + " 3kc");
       }
 
-      var account = accounts[0];
-      App.contracts.GroupBuy.info(function (error, result) {
-        console.log(error);
-
-        $('#user-eth').text(App.roundUp(result[1].toNumber() / 10 ** 18) + " (max " + App.MAX_EACH + " eth)");
-        $('#user-token').text(result[2].c[0]);
-
-        var totalEth = App.roundUp(result[3].toNumber() / 10 ** 18);
-        var totalEthP = App.roundUp(totalEth * 100 / App.MAX_TOTAL);
-        $('#info-total-eth').text(totalEth + "/" + App.MAX_TOTAL + " Eth");
-        $('#bar-total-eth').css("width", totalEthP + "%");
-        $('#info-total-eth-p').text(totalEthP + "%");
-        var totalToken = result[4].toNumber();
-        if (totalToken > 0) {
-          $('#info-price').text(App.roundUp(totalToken / totalEth) + " 3kc");
-        }
-
-        if (result[0].c[0] == 1) {
-          $('#send-group').show();
-          $(document).on('click', '#send-btn', App.handleSend);
-        } else if (result[0].c[0] == 3) {
-          $('#claim-btn').show();
-          $(document).on('click', '#claim-btn', App.handleClaim);
-        }
-      });
+      if (result[0].c[0] == 1) {
+        $('#send-group').show();
+        $(document).on('click', '#send-btn', App.handleSend);
+      } else if (result[0].c[0] == 3) {
+        $('#claim-btn').show();
+        $(document).on('click', '#claim-btn', App.handleClaim);
+      }
     });
   },
 
